@@ -64,10 +64,10 @@
             const time = new Date().toLocaleTimeString();
 
             try {
-                const res = await fetch('http://localhost:8000/trade', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ symbol, action, volume: parseFloat(lot) })
+                // เช็คสถานะการเชื่อมต่อ
+           fetch('http://localhost:8000/trade', {method: 'OPTIONS'})
+            .then(() => document.getElementById('connStatus').innerText = 'Connected')
+            .catch(() => document.getElementById('connStatus').innerText = 'Disconnected'); })
                 });
 
                 const data = await res.json();
