@@ -77,26 +77,7 @@
         }
 
         // ฟังก์ชันจำลองการส่งคำสั่ง (เตรียมไว้เชื่อมต่อกับ API ในขั้นตอนถัดไป)
-        function executeOrder(symbol, side) {
-            const lot = document.getElementById('globalLot').value;
-            const logBody = document.getElementById('historyLog');
-            
-            const timestamp = new Date().toLocaleTimeString();
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="px-4 py-3 font-mono">${timestamp}</td>
-                <td class="px-4 py-3 font-bold text-white">${symbol}</td>
-                <td class="px-4 py-3 ${side === 'BUY' ? 'text-green-500' : 'text-red-500'} font-bold">${side}</td>
-                <td class="px-4 py-3">${lot}</td>
-                <td class="px-4 py-3 text-yellow-500">Processing...</td>
-            `;
-            logBody.prepend(row);
-            
-            console.log(`Executing ${side} on ${symbol} with ${lot} lots`);
-            // ในขั้นตอนถัดไป เราจะใส่โค้ด fetch() ที่นี่เพื่อยิงเข้า API ของเรา
-        }
-
+       async function executeOrder
         renderPairs();
     </script>
 </body>
