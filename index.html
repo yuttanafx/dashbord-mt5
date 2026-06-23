@@ -1,56 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terravolteco | Trading Dashboard</title>
-    <!-- ใช้ Tailwind CSS ผ่าน CDN เพื่อความรวดเร็วในการพัฒนา -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f1f5f9; }
+        body { background-color: #0f172a; color: #f1f5f9; font-family: sans-serif; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
-<body class="p-4 md:p-8">
-
-    <div class="max-w-7xl mx-auto">
-        <!-- Header Section -->
-        <header class="glass p-6 rounded-2xl mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+<body class="p-6">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="glass p-6 rounded-2xl mb-8 flex justify-between items-center">
             <div>
-                <h1 class="text-2xl font-bold">Trading <span class="text-blue-500">Dashboard</span></h1>
-                <p class="text-slate-400 text-sm">Terravolteco System v1.0</p>
+                <h1 class="text-2xl font-bold">Trading <span class="text-blue-500">Terminal</span></h1>
+                <p class="text-slate-400 text-sm">System Status: <span id="connStatus" class="text-yellow-500">Checking...</span></p>
             </div>
-            <div class="flex items-center gap-4">
-                <div class="text-right">
-                    <p class="text-xs text-slate-400 uppercase tracking-wider">Lot Size</p>
-                    <input type="number" id="globalLot" value="0.01" step="0.01" class="bg-slate-900 border border-slate-700 rounded px-3 py-1 w-24 text-center font-mono focus:outline-none focus:border-blue-500">
-                </div>
+            <div>
+                <label class="text-xs text-slate-400 block mb-1">Lot Size</label>
+                <input type="number" id="globalLot" value="0.01" step="0.01" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 w-24 text-center">
             </div>
         </header>
 
-        <!-- Main Pairs Grid -->
-        <div id="pairsGrid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-            <!-- คู่เงินจะถูกโหลดที่นี่ผ่าน JavaScript -->
-        </div>
+        <!-- Pairs Grid -->
+        <div id="pairsGrid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8"></div>
 
-        <!-- Order Log Section -->
+        <!-- History -->
         <section class="glass rounded-2xl p-6">
-            <h2 class="text-lg font-semibold mb-4 text-slate-200">Execution History</h2>
+            <h2 class="font-bold mb-4">Order History</h2>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-slate-400">
-                    <thead class="text-xs uppercase border-b border-slate-700">
-                        <tr>
-                            <th class="px-4 py-3">Timestamp</th>
-                            <th class="px-4 py-3">Symbol</th>
-                            <th class="px-4 py-3">Side</th>
-                            <th class="px-4 py-3">Volume</th>
-                            <th class="px-4 py-3">Status</th>
-                        </tr>
+                <table class="w-full text-sm text-left">
+                    <thead class="text-slate-400 border-b border-slate-700">
+                        <tr><th class="py-2">Time</th><th>Symbol</th><th>Side</th><th>Volume</th><th>Result</th></tr>
                     </thead>
-                    <tbody id="historyLog" class="divide-y divide-slate-800">
-                        <!-- Log data will appear here -->
-                    </tbody>
+                    <tbody id="historyLog"></tbody>
                 </table>
             </div>
         </section>
@@ -59,26 +44,52 @@
     <script>
         const pairs = ['XAUUSD', 'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD', 'USDCHF', 'BTCUSD', 'ETHUSD'];
         
-        // ฟังก์ชันสร้าง UI คู่เงิน
-        function renderPairs() {
-            const grid = document.getElementById('pairsGrid');
-            pairs.forEach(pair => {
-                const card = document.createElement('div');
-                card.className = 'glass p-4 rounded-xl hover:bg-slate-800 transition-colors border border-slate-700';
-                card.innerHTML = `
-                    <h3 class="font-bold text-lg mb-2">${pair}</h3>
+        // 1. สร้างปุ่มคู่เงิน
+        const grid = document.getElementById('pairsGrid');
+        pairs.forEach(p => {
+            grid.innerHTML += `
+                <div class="glass p-4 rounded-xl text-center">
+                    <h3 class="font-bold mb-2">${p}</h3>
                     <div class="flex gap-2">
-                        <button onclick="executeOrder('${pair}', 'BUY')" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded text-xs transition-all">BUY</button>
-                        <button onclick="executeOrder('${pair}', 'SELL')" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition-all">SELL</button>
+                        <button onclick="trade('${p}', 'BUY')" class="flex-1 bg-green-600 py-2 rounded font-bold text-xs">BUY</button>
+                        <button onclick="trade('${p}', 'SELL')" class="flex-1 bg-red-600 py-2 rounded font-bold text-xs">SELL</button>
                     </div>
-                `;
-                grid.appendChild(card);
-            });
+                </div>`;
+        });
+
+        // 2. ฟังก์ชันส่งคำสั่งไปหา Python Bridge
+        async function trade(symbol, action) {
+            const lot = document.getElementById('globalLot').value;
+            const log = document.getElementById('historyLog');
+            const time = new Date().toLocaleTimeString();
+
+            try {
+                const res = await fetch('http://localhost:8000/trade', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ symbol, action, volume: parseFloat(lot) })
+                });
+
+                const data = await res.json();
+                const color = action === 'BUY' ? 'text-green-500' : 'text-red-500';
+                
+                log.innerHTML = `
+                    <tr class="border-b border-slate-800">
+                        <td class="py-3">${time}</td>
+                        <td class="font-bold">${symbol}</td>
+                        <td class="${color} font-bold">${action}</td>
+                        <td>${lot}</td>
+                        <td class="text-blue-400">Success ID:${data.order_id || 'N/A'}</td>
+                    </tr>` + log.innerHTML;
+            } catch (e) {
+                alert("เชื่อมต่อ Python Bridge (localhost:8000) ไม่ได้! ตรวจสอบว่ารัน bridge.py อยู่");
+            }
         }
 
-        // ฟังก์ชันจำลองการส่งคำสั่ง (เตรียมไว้เชื่อมต่อกับ API ในขั้นตอนถัดไป)
-       async function executeOrder
-        renderPairs();
+        // เช็คสถานะการเชื่อมต่อ
+        fetch('http://localhost:8000/trade', {method: 'OPTIONS'})
+            .then(() => document.getElementById('connStatus').innerText = 'Connected')
+            .catch(() => document.getElementById('connStatus').innerText = 'Disconnected');
     </script>
 </body>
-</html> 
+</html>
