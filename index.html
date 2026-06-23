@@ -58,18 +58,42 @@
         });
 
         // 2. ฟังก์ชันส่งคำสั่งไปหา Python Bridge
-        async function trade(symbol, action) {
-            const lot = document.getElementById('globalLot').value;
-            const log = document.getElementById('historyLog');
-            const time = new Date().toLocaleTimeString();
+        // ฟังก์ชันส่งคำสั่ง (ตัดส่วนที่ซ้อนกันออกแล้วครับ)
+async function trade(symbol, action) {
+    const lot = document.getElementById('globalLot').value;
+    const log = document.getElementById('historyLog');
+    const time = new Date().toLocaleTimeString();
 
-            try {
-                // เช็คสถานะการเชื่อมต่อ
-           fetch('http://localhost:8000/trade', {method: 'OPTIONS'})
-            .then(() => document.getElementById('connStatus').innerText = 'Connected')
-            .catch(() => document.getElementById('connStatus').innerText = 'Disconnected'); })
-                });
+    try {
+        const res = await fetch('http://localhost:8000/trade', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ symbol, action, volume: parseFloat(lot) })
+        });
 
+        const data = await res.json();
+        const color = action === 'BUY' ? 'text-green-500' : 'text-red-500';
+        
+        // อัปเดตตาราง Log
+        log.innerHTML = `
+            <tr class="border-b border-slate-800">
+                <td class="py-3">${time}</td>
+                <td class="font-bold">${symbol}</td>
+                <td class="${color} font-bold">${action}</td>
+                <td>${lot}</td>
+                <td class="text-blue-400">Success ID:${data.order_id || 'N/A'}</td>
+            </tr>` + log.innerHTML;
+
+        // อัปเดตสถานะว่าเชื่อมต่อสำเร็จ
+        document.getElementById('connStatus').innerText = 'Connected';
+        document.getElementById('connStatus').className = 'text-green-500';
+
+    } catch (e) {
+        alert("เชื่อมต่อ Python Bridge ไม่ได้! ตรวจสอบว่ารัน bridge.py อยู่");
+        document.getElementById('connStatus').innerText = 'Disconnected';
+        document.getElementById('connStatus').className = 'text-red-500';
+    }
+}
                 const data = await res.json();
                 const color = action === 'BUY' ? 'text-green-500' : 'text-red-500';
                 
