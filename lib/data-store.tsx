@@ -7,7 +7,15 @@ import {
   useCallback,
   ReactNode,
 } from "react";
-import { Transaction, Invoice } from "./types";
+import {
+  Transaction,
+  BusinessDocument,
+  DocumentType,
+  DocumentStatus,
+  CompanyProfile,
+  DOCUMENT_PREFIX,
+} from "./types";
+import { generateId } from "./utils";
 
 const seedTransactions: Transaction[] = [
   {
@@ -44,10 +52,11 @@ const seedTransactions: Transaction[] = [
   },
 ];
 
-const seedInvoices: Invoice[] = [
+const seedDocuments: BusinessDocument[] = [
   {
-    id: "i1",
-    invoiceNumber: "INV-0001",
+    id: "d1",
+    type: "invoice",
+    docNumber: "INV-0001",
     clientName: "บริษัท ทดสอบ จำกัด",
     clientContact: "081-234-5678",
     issueDate: "2026-06-15",
@@ -60,24 +69,44 @@ const seedInvoices: Invoice[] = [
   },
 ];
 
+const defaultCompanyProfile: CompanyProfile = {
+  name: "",
+  address: "",
+  taxId: "",
+  phone: "",
+  email: "",
+  logoDataUrl: "",
+};
+
 interface DataContextValue {
   transactions: Transaction[];
-  invoices: Invoice[];
+  documents: BusinessDocument[];
+  companyProfile: CompanyProfile;
   addTransaction: (t: Omit<Transaction, "id">) => void;
   deleteTransaction: (id: string) => void;
-  addInvoice: (inv: Omit<Invoice, "id">) => void;
-  updateInvoiceStatus: (id: string, status: Invoice["status"]) => void;
+  addDocument: (
+    doc: Omit<BusinessDocument, "id" | "docNumber" | "type">,
+    type: DocumentType
+  ) => BusinessDocument;
+  updateDocumentStatus: (id: string, status: DocumentStatus) => void;
+  updateDocumentPaymentInfo: (id: string, info: { paymentMethod?: string; paidDate?: string }) => void;
+  convertDocument: (id: string, toType: DocumentType) => BusinessDocument | null;
+  updateCompanyProfile: (profile: CompanyProfile) => void;
+  getDocument: (id: string) => BusinessDocument | undefined;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
 
-function generateId(): string {
-  return Math.random().toString(36).slice(2, 10);
+function nextDocNumber(documents: BusinessDocument[], type: DocumentType): string {
+  const prefix = DOCUMENT_PREFIX[type];
+  const countOfType = documents.filter((d) => d.type === type).length;
+  return `${prefix}-${String(countOfType + 1).padStart(4, "0")}`;
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>(seedTransactions);
-  const [invoices, setInvoices] = useState<Invoice[]>(seedInvoices);
+  const [documents, setDocuments] = useState<BusinessDocument[]>(seedDocuments);
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile>(defaultCompanyProfile);
 
   const addTransaction = useCallback((t: Omit<Transaction, "id">) => {
     setTransactions((prev) => [{ ...t, id: generateId() }, ...prev]);
@@ -87,25 +116,82 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const addInvoice = useCallback((inv: Omit<Invoice, "id">) => {
-    setInvoices((prev) => [{ ...inv, id: generateId() }, ...prev]);
-  }, []);
+  const addDocument = useCallback(
+    (doc: Omit<BusinessDocument, "id" | "docNumber" | "type">, type: DocumentType) => {
+      const docNumber = nextDocNumber(documents, type);
+      const created: BusinessDocument = { ...doc, id: generateId(), docNumber, type };
+      setDocuments((prev) => [created, ...prev]);
+      return created;
+    },
+    [documents]
+  );
 
-  const updateInvoiceStatus = useCallback((id: string, status: Invoice["status"]) => {
-    setInvoices((prev) =>
-      prev.map((inv) => (inv.id === id ? { ...inv, status } : inv))
+  const updateDocumentStatus = useCallback((id: string, status: DocumentStatus) => {
+    setDocuments((prev) =>
+      prev.map((doc) => (doc.id === id ? { ...doc, status } : doc))
     );
   }, []);
+
+  const updateDocumentPaymentInfo = useCallback(
+    (id: string, info: { paymentMethod?: string; paidDate?: string }) => {
+      setDocuments((prev) =>
+        prev.map((doc) => (doc.id === id ? { ...doc, ...info } : doc))
+      );
+    },
+    []
+  );
+
+  const convertDocument = useCallback(
+    (id: string, toType: DocumentType): BusinessDocument | null => {
+      const source = documents.find((d) => d.id === id);
+      if (!source) return null;
+
+      const docNumber = nextDocNumber(documents, toType);
+      const newDoc: BusinessDocument = {
+        ...source,
+        id: generateId(),
+        type: toType,
+        docNumber,
+        status: toType === "receipt" ? "paid" : "draft",
+        issueDate: new Date().toISOString().slice(0, 10),
+        convertedFromId: source.id,
+        convertedToId: undefined,
+        paidDate: toType === "receipt" ? new Date().toISOString().slice(0, 10) : undefined,
+      };
+
+      setDocuments((prev) => [
+        newDoc,
+        ...prev.map((d) => (d.id === source.id ? { ...d, convertedToId: newDoc.id } : d)),
+      ]);
+
+      return newDoc;
+    },
+    [documents]
+  );
+
+  const updateCompanyProfile = useCallback((profile: CompanyProfile) => {
+    setCompanyProfile(profile);
+  }, []);
+
+  const getDocument = useCallback(
+    (id: string) => documents.find((d) => d.id === id),
+    [documents]
+  );
 
   return (
     <DataContext.Provider
       value={{
         transactions,
-        invoices,
+        documents,
+        companyProfile,
         addTransaction,
         deleteTransaction,
-        addInvoice,
-        updateInvoiceStatus,
+        addDocument,
+        updateDocumentStatus,
+        updateDocumentPaymentInfo,
+        convertDocument,
+        updateCompanyProfile,
+        getDocument,
       }}
     >
       {children}

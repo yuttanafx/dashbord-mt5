@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Wallet, TrendingUp, TrendingDown, Plus } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, FileText } from "lucide-react";
 import { useData } from "@/lib/data-store";
 import { formatCurrency } from "@/lib/utils";
 import SummaryCard from "@/components/SummaryCard";
@@ -54,13 +54,20 @@ export default function DashboardPage() {
       </section>
 
       {/* ปุ่มลัด */}
-      <section className="mb-8">
+      <section className="mb-8 flex flex-wrap gap-3">
         <Link
           href="/transactions/new"
           className="inline-flex items-center gap-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-medium text-sm px-5 py-3 rounded-xl shadow-sm transition-colors"
         >
           <Plus size={18} />
           บันทึกรายการใหม่
+        </Link>
+        <Link
+          href="/documents/new?type=quotation"
+          className="inline-flex items-center gap-2 bg-[var(--color-card-bg)] border border-[var(--color-border)] hover:border-[var(--color-primary)] text-[var(--color-text-primary)] font-medium text-sm px-5 py-3 rounded-xl shadow-sm transition-colors"
+        >
+          <FileText size={18} />
+          ออกใบเสนอราคา/ใบแจ้งหนี้
         </Link>
       </section>
 

@@ -8,20 +8,22 @@ import {
   ListOrdered,
   FileText,
   Wallet,
+  Settings,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "หน้าหลัก", icon: LayoutDashboard },
   { href: "/transactions/new", label: "บันทึกรายการใหม่", icon: ListPlus },
   { href: "/transactions", label: "รายการทั้งหมด", icon: ListOrdered },
-  { href: "/invoices", label: "ใบแจ้งหนี้", icon: FileText },
+  { href: "/documents", label: "เอกสาร", icon: FileText },
+  { href: "/settings", label: "ตั้งค่าร้าน", icon: Settings },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex md:flex-col md:w-60 md:shrink-0 border-r border-[var(--color-border)] bg-[var(--color-card-bg)] min-h-screen px-4 py-6">
+    <aside className="no-print hidden md:flex md:flex-col md:w-60 md:shrink-0 border-r border-[var(--color-border)] bg-[var(--color-card-bg)] min-h-screen px-4 py-6">
       <div className="flex items-center gap-2 px-2 mb-8">
         <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[var(--color-primary-soft)]">
           <Wallet size={20} className="text-[var(--color-primary)]" />

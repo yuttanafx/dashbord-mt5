@@ -8,14 +8,14 @@ const navItems = [
   { href: "/", label: "หน้าหลัก", icon: LayoutDashboard },
   { href: "/transactions", label: "รายการ", icon: ListOrdered },
   { href: "/transactions/new", label: "บันทึก", icon: ListPlus },
-  { href: "/invoices", label: "ใบแจ้งหนี้", icon: FileText },
+  { href: "/documents", label: "เอกสาร", icon: FileText },
 ];
 
 export default function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-[var(--color-card-bg)] border-t border-[var(--color-border)] flex items-stretch">
+    <nav className="no-print md:hidden fixed bottom-0 left-0 right-0 z-20 bg-[var(--color-card-bg)] border-t border-[var(--color-border)] flex items-stretch">
       {navItems.map(({ href, label, icon: Icon }) => {
         const isActive =
           href === "/" ? pathname === "/" : pathname.startsWith(href);

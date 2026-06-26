@@ -59,3 +59,18 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+/* ซ่อน sidebar, mobile nav, และปุ่มต่างๆ ที่ไม่จำเป็นตอนพิมพ์ */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+  }
+  .print-document {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+}
