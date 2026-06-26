@@ -406,7 +406,7 @@ function connectDeriv() {
   if (!token) { alert('กรุณาใส่ API Token ครับ'); return; }
 
   setStatus('กำลังเชื่อมต่อ...', '#ffb300');
-  ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
+  ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=36544');
 
   ws.onopen = () => {
     setStatus('เชื่อมต่อแล้ว — กำลัง Authorize...', '#ffb300');
