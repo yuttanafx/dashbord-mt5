@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  /* Backgrounds */
+  --color-app-bg: #f5f4f2;       /* ขาวอมเทาอ่อน (ควันบุหรี่อ่อน) - พื้นหลังหลัก */
+  --color-card-bg: #ffffff;      /* ขาวบริสุทธิ์ - การ์ด/พาเนล */
+
+  /* Brand */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-soft: #eff6ff;
+
+  /* Text */
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+
+  /* Semantic - รายรับ / รายจ่าย */
+  --color-income: #16a34a;
+  --color-income-soft: #f0fdf4;
+  --color-expense: #dc2626;
+  --color-expense-soft: #fef2f2;
+
+  /* Borders */
+  --color-border: #e7e5e2;
+
+  /* ฟอนต์ระบบ รองรับภาษาไทยและละติน */
+  --font-sans: "Noto Sans Thai", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+}
+
+@theme inline {
+  --color-app-bg: var(--color-app-bg);
+  --color-card-bg: var(--color-card-bg);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-income: var(--color-income);
+  --color-income-soft: var(--color-income-soft);
+  --color-expense: var(--color-expense);
+  --color-expense-soft: var(--color-expense-soft);
+  --color-border: var(--color-border);
+}
+
+body {
+  background: var(--color-app-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+/* ซ่อนลูกศร spinner ของ input number ให้ฟอร์มดูเรียบขึ้น */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
