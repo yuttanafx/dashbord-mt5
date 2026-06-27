@@ -5,10 +5,15 @@
   --color-app-bg: #f5f4f2;       /* ขาวอมเทาอ่อน (ควันบุหรี่อ่อน) - พื้นหลังหลัก */
   --color-card-bg: #ffffff;      /* ขาวบริสุทธิ์ - การ์ด/พาเนล */
 
-  /* Brand */
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-soft: #eff6ff;
+  /* Brand - ฟ้าเข้มแบบแอปธุรกิจ */
+  --color-primary: #0b5fa8;
+  --color-primary-hover: #094c87;
+  --color-primary-soft: #e8f1fa;
+  --color-primary-dark: #073c6b;
+
+  /* Chart accent */
+  --color-chart-bar: #0b5fa8;
+  --color-chart-bar-light: #bcdcf4;
 
   /* Text */
   --color-text-primary: #1e293b;
@@ -34,6 +39,9 @@
   --color-primary: var(--color-primary);
   --color-primary-hover: var(--color-primary-hover);
   --color-primary-soft: var(--color-primary-soft);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-chart-bar: var(--color-chart-bar);
+  --color-chart-bar-light: var(--color-chart-bar-light);
   --color-text-primary: var(--color-text-primary);
   --color-text-secondary: var(--color-text-secondary);
   --color-text-muted: var(--color-text-muted);

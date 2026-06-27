@@ -6,6 +6,7 @@ import { useData } from "@/lib/data-store";
 import { formatCurrency } from "@/lib/utils";
 import SummaryCard from "@/components/SummaryCard";
 import TransactionRow from "@/components/TransactionRow";
+import MonthlyChart from "@/components/MonthlyChart";
 
 export default function DashboardPage() {
   const { transactions, loading } = useData();
@@ -59,6 +60,11 @@ export default function DashboardPage() {
           icon={<TrendingDown size={22} />}
           tone="expense"
         />
+      </section>
+
+      {/* กราฟรายเดือน */}
+      <section className="mb-8">
+        <MonthlyChart transactions={transactions} />
       </section>
 
       {/* ปุ่มลัด */}

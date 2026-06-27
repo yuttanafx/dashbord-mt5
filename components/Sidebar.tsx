@@ -33,11 +33,11 @@ export default function Sidebar() {
 
   return (
     <aside className="no-print hidden md:flex md:flex-col md:w-60 md:shrink-0 border-r border-[var(--color-border)] bg-[var(--color-card-bg)] min-h-screen px-4 py-6">
-      <div className="flex items-center gap-2 px-2 mb-8">
-        <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[var(--color-primary-soft)]">
-          <Wallet size={20} className="text-[var(--color-primary)]" />
+      <div className="flex items-center gap-2.5 px-3 py-3 mb-6 rounded-xl bg-[var(--color-primary)]">
+        <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/15">
+          <Wallet size={20} className="text-white" />
         </div>
-        <span className="font-semibold text-[var(--color-text-primary)] text-lg">
+        <span className="font-semibold text-white text-lg">
           บัญชีของฉัน
         </span>
       </div>
