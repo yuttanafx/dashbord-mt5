@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, ImageIcon, X } from "lucide-react";
 import { useData } from "@/lib/data-store";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -11,6 +11,7 @@ type Filter = "all" | "income" | "expense";
 export default function TransactionsPage() {
   const { transactions, deleteTransaction } = useData();
   const [filter, setFilter] = useState<Filter>("all");
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   const filtered = transactions.filter((t) =>
     filter === "all" ? true : t.type === filter
@@ -61,6 +62,24 @@ export default function TransactionsPage() {
           <div className="divide-y divide-[var(--color-border)]">
             {filtered.map((tx) => (
               <div key={tx.id} className="flex items-center gap-3 py-3">
+                {tx.receiptImageUrl ? (
+                  <button
+                    onClick={() => setViewingImage(tx.receiptImageUrl!)}
+                    className="shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-[var(--color-border)]"
+                    aria-label="ดูรูปสลิป/ใบเสร็จ"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={tx.receiptImageUrl}
+                      alt="สลิป/ใบเสร็จ"
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ) : (
+                  <div className="shrink-0 w-10 h-10 rounded-lg bg-[var(--color-app-bg)] flex items-center justify-center text-[var(--color-text-muted)]">
+                    <ImageIcon size={16} />
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
                     {tx.note || tx.category}
@@ -91,6 +110,31 @@ export default function TransactionsPage() {
           </div>
         )}
       </div>
+
+      {/* Modal ดูรูปขยาย */}
+      {viewingImage && (
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+          onClick={() => setViewingImage(null)}
+        >
+          <div className="relative max-w-lg w-full">
+            <button
+              onClick={() => setViewingImage(null)}
+              aria-label="ปิด"
+              className="absolute -top-10 right-0 text-white p-2"
+            >
+              <X size={22} />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={viewingImage}
+              alt="สลิป/ใบเสร็จขนาดเต็ม"
+              className="w-full rounded-xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,14 @@
 import { useState, useRef, useEffect, FormEvent } from "react";
 import { Upload, X, Check } from "lucide-react";
 import { useData } from "@/lib/data-store";
+import {
+  DocumentTemplate,
+  DOCUMENT_TEMPLATE_LABEL,
+  DOCUMENT_TEMPLATE_DESCRIPTION,
+} from "@/lib/types";
+import TemplatePreviewThumb from "@/components/TemplatePreviewThumb";
+
+const TEMPLATE_ORDER: DocumentTemplate[] = ["simple", "branded", "detailed"];
 
 export default function SettingsPage() {
   const { companyProfile, updateCompanyProfile } = useData();
@@ -172,6 +180,46 @@ export default function SettingsPage() {
             placeholder="contact@example.com"
             className="w-full rounded-xl border border-[var(--color-border)] px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-3">
+            แบบฟอร์มเอกสาร
+          </label>
+          <p className="text-xs text-[var(--color-text-secondary)] mb-3">
+            ใช้กับใบเสนอราคา ใบแจ้งหนี้ และใบเสร็จรับเงินทุกใบที่พิมพ์ออกมา
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            {TEMPLATE_ORDER.map((tpl) => {
+              const isSelected = (form.documentTemplate || "simple") === tpl;
+              return (
+                <button
+                  key={tpl}
+                  type="button"
+                  onClick={() => setForm((p) => ({ ...p, documentTemplate: tpl }))}
+                  className={`text-left rounded-xl border-2 p-2 transition-colors ${
+                    isSelected
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                      : "border-[var(--color-border)] hover:border-[var(--color-text-muted)]"
+                  }`}
+                >
+                  <div className="aspect-[3/4] rounded-lg overflow-hidden border border-[var(--color-border)] mb-2 bg-white">
+                    <TemplatePreviewThumb template={tpl} />
+                  </div>
+                  <p
+                    className={`text-xs font-medium ${
+                      isSelected ? "text-[var(--color-primary)]" : "text-[var(--color-text-primary)]"
+                    }`}
+                  >
+                    {DOCUMENT_TEMPLATE_LABEL[tpl]}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-[var(--color-text-muted)] mt-2">
+            {DOCUMENT_TEMPLATE_DESCRIPTION[(form.documentTemplate || "simple") as DocumentTemplate]}
+          </p>
         </div>
 
         <button

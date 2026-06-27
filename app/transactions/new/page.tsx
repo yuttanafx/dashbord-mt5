@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useRef, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Camera, X, Loader2 } from "lucide-react";
 import { useData } from "@/lib/data-store";
 import { TransactionType, INCOME_CATEGORIES, EXPENSE_CATEGORIES } from "@/lib/types";
-import { todayISO } from "@/lib/utils";
+import { todayISO, compressImageToDataUrl } from "@/lib/utils";
 
 export default function NewTransactionPage() {
   const router = useRouter();
@@ -18,12 +18,35 @@ export default function NewTransactionPage() {
   const [date, setDate] = useState(todayISO());
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [receiptImage, setReceiptImage] = useState<string>("");
+  const [processingImage, setProcessingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categories = type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
   function handleTypeChange(next: TransactionType) {
     setType(next);
     setCategory(next === "income" ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0]);
+  }
+
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProcessingImage(true);
+    setError("");
+    try {
+      const compressed = await compressImageToDataUrl(file);
+      setReceiptImage(compressed);
+    } catch {
+      setError("ไม่สามารถประมวลผลรูปภาพได้ กรุณาลองใหม่");
+    } finally {
+      setProcessingImage(false);
+    }
+  }
+
+  function removeImage() {
+    setReceiptImage("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -36,7 +59,14 @@ export default function NewTransactionPage() {
     setError("");
     setSubmitting(true);
     try {
-      await addTransaction({ type, amount: numericAmount, category, note, date });
+      await addTransaction({
+        type,
+        amount: numericAmount,
+        category,
+        note,
+        date,
+        ...(receiptImage ? { receiptImageUrl: receiptImage } : {}),
+      });
       router.push("/");
     } catch {
       setError("บันทึกไม่สำเร็จ กรุณาลองใหม่");
@@ -159,11 +189,60 @@ export default function NewTransactionPage() {
           />
         </div>
 
+        {/* แนบรูปสลิป/ใบเสร็จ */}
+        <div>
+          <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-2">
+            แนบรูปสลิป/ใบเสร็จ (ไม่บังคับ)
+          </label>
+          {receiptImage ? (
+            <div className="relative inline-block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={receiptImage}
+                alt="สลิป/ใบเสร็จที่แนบ"
+                className="w-32 h-32 object-cover rounded-xl border border-[var(--color-border)]"
+              />
+              <button
+                type="button"
+                onClick={removeImage}
+                aria-label="ลบรูปที่แนบ"
+                className="absolute -top-2 -right-2 bg-[var(--color-expense)] text-white rounded-full p-1 shadow-sm"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={processingImage}
+              className="w-32 h-32 rounded-xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-app-bg)] flex flex-col items-center justify-center gap-1.5 text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors disabled:opacity-60"
+            >
+              {processingImage ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <>
+                  <Camera size={20} />
+                  <span className="text-xs">แนบรูป</span>
+                </>
+              )}
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleImageChange}
+            className="hidden"
+          />
+        </div>
+
         {error && <p className="text-sm text-[var(--color-expense)]">{error}</p>}
 
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || processingImage}
           className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-60 text-white font-medium py-3.5 rounded-xl shadow-sm transition-colors"
         >
           {submitting ? "กำลังบันทึก..." : "บันทึกรายการ"}

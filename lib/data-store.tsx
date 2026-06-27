@@ -37,6 +37,7 @@ const defaultCompanyProfile: CompanyProfile = {
   phone: "",
   email: "",
   logoDataUrl: "",
+  documentTemplate: "simple",
 };
 
 interface DataContextValue {

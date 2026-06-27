@@ -7,6 +7,7 @@ export interface Transaction {
   category: string;
   note: string;
   date: string; // ISO date string, e.g. "2026-06-26"
+  receiptImageUrl?: string; // รูปสลิปโอนเงิน/ใบเสร็จ เก็บเป็น base64 data URL (บีบอัดแล้ว)
 }
 
 export interface InvoiceItem {
@@ -44,6 +45,8 @@ export interface BusinessDocument {
   convertedToId?: string;
 }
 
+export type DocumentTemplate = "simple" | "branded" | "detailed";
+
 export interface CompanyProfile {
   name: string;
   address: string;
@@ -51,7 +54,20 @@ export interface CompanyProfile {
   phone: string;
   email: string;
   logoDataUrl: string; // เก็บโลโก้เป็น base64 data URL
+  documentTemplate?: DocumentTemplate; // เทมเพลตที่ใช้พิมพ์เอกสารทุกใบ
 }
+
+export const DOCUMENT_TEMPLATE_LABEL: Record<DocumentTemplate, string> = {
+  simple: "เรียบง่าย",
+  branded: "โลโก้ใหญ่",
+  detailed: "ละเอียด",
+};
+
+export const DOCUMENT_TEMPLATE_DESCRIPTION: Record<DocumentTemplate, string> = {
+  simple: "ขาวสะอาด ไม่มีสีพื้นหลัง เน้นความเรียบ ประหยัดหมึกพิมพ์",
+  branded: "แถบสีฟ้าเข้มคาดหัวกระดาษ โลโก้ใหญ่เด่น เหมาะกับการสร้างแบรนด์",
+  detailed: "มีกรอบตารางครบ เลขลำดับรายการ เหมาะกับธุรกิจที่ต้องการความเป็นทางการสูง",
+};
 
 export const DOCUMENT_TYPE_LABEL: Record<DocumentType, string> = {
   quotation: "ใบเสนอราคา",
