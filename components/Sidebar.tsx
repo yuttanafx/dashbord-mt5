@@ -10,11 +10,13 @@ import {
   Wallet,
   Settings,
   LogOut,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
   { href: "/", label: "หน้าหลัก", icon: LayoutDashboard },
+  { href: "/summary", label: "สรุปรายการ", icon: BarChart3 },
   { href: "/transactions/new", label: "บันทึกรายการใหม่", icon: ListPlus },
   { href: "/transactions", label: "รายการทั้งหมด", icon: ListOrdered },
   { href: "/documents", label: "เอกสาร", icon: FileText },

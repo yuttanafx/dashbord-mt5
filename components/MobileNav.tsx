@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ListPlus, ListOrdered, FileText } from "lucide-react";
+import { LayoutDashboard, ListPlus, ListOrdered, FileText, BarChart3 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "หน้าหลัก", icon: LayoutDashboard },
-  { href: "/transactions", label: "รายการ", icon: ListOrdered },
+  { href: "/summary", label: "สรุป", icon: BarChart3 },
   { href: "/transactions/new", label: "บันทึก", icon: ListPlus },
+  { href: "/transactions", label: "รายการ", icon: ListOrdered },
   { href: "/documents", label: "เอกสาร", icon: FileText },
 ];
 

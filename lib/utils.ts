@@ -36,3 +36,23 @@ export function fileToDataUrl(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
+// ช่วงวันที่ของเดือนที่กำหนด (year: ค.ศ., month: 0-11) คืนค่าเป็น ISO date string
+export function monthRange(year: number, month: number): { start: string; end: string } {
+  const start = new Date(year, month, 1);
+  const end = new Date(year, month + 1, 0); // วันสุดท้ายของเดือน
+  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+}
+
+export function isWithinRange(dateISO: string, start: string, end: string): boolean {
+  return dateISO >= start && dateISO <= end;
+}
+
+export const THAI_MONTHS_FULL = [
+  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+  "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
+];
+
+export function toBuddhistYear(year: number): number {
+  return year + 543;
+}
