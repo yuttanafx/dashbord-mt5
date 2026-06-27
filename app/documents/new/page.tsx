@@ -50,7 +50,7 @@ function NewDocumentForm() {
     setItems((prev) => (prev.length > 1 ? prev.filter((it) => it.id !== id) : prev));
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!clientName.trim()) {
       setError("กรุณากรอกชื่อลูกค้า");
@@ -61,7 +61,7 @@ function NewDocumentForm() {
       return;
     }
 
-    const created = addDocument(
+    const created = await addDocument(
       {
         clientName,
         clientContact,

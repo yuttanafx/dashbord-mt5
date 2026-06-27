@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   ListPlus,
@@ -9,7 +9,9 @@ import {
   FileText,
   Wallet,
   Settings,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
   { href: "/", label: "หน้าหลัก", icon: LayoutDashboard },
@@ -21,6 +23,13 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/login");
+  }
 
   return (
     <aside className="no-print hidden md:flex md:flex-col md:w-60 md:shrink-0 border-r border-[var(--color-border)] bg-[var(--color-card-bg)] min-h-screen px-4 py-6">
@@ -33,7 +42,7 @@ export default function Sidebar() {
         </span>
       </div>
 
-      <nav className="flex flex-col gap-1">
+      <nav className="flex flex-col gap-1 flex-1">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive =
             href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -53,6 +62,21 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      <div className="border-t border-[var(--color-border)] pt-3 mt-3">
+        {user?.email && (
+          <p className="px-3 text-xs text-[var(--color-text-muted)] mb-2 truncate">
+            {user.email}
+          </p>
+        )}
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-app-bg)] transition-colors"
+        >
+          <LogOut size={18} />
+          ออกจากระบบ
+        </button>
+      </div>
     </aside>
   );
 }

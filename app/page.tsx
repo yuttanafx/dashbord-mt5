@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Wallet, TrendingUp, TrendingDown, Plus, FileText } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, FileText, Loader2 } from "lucide-react";
 import { useData } from "@/lib/data-store";
 import { formatCurrency } from "@/lib/utils";
 import SummaryCard from "@/components/SummaryCard";
 import TransactionRow from "@/components/TransactionRow";
 
 export default function DashboardPage() {
-  const { transactions } = useData();
+  const { transactions, loading } = useData();
 
   const totalIncome = transactions
     .filter((t) => t.type === "income")
@@ -19,6 +19,14 @@ export default function DashboardPage() {
   const balance = totalIncome - totalExpense;
 
   const recent = transactions.slice(0, 5);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 size={28} className="text-[var(--color-primary)] animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10">

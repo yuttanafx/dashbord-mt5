@@ -4,9 +4,23 @@ import {
   createContext,
   useContext,
   useState,
+  useEffect,
   useCallback,
   ReactNode,
 } from "react";
+import {
+  collection,
+  doc,
+  addDoc,
+  deleteDoc,
+  updateDoc,
+  setDoc,
+  onSnapshot,
+  query,
+  orderBy,
+} from "firebase/firestore";
+import { db } from "./firebase";
+import { useAuth } from "./auth-context";
 import {
   Transaction,
   BusinessDocument,
@@ -15,59 +29,6 @@ import {
   CompanyProfile,
   DOCUMENT_PREFIX,
 } from "./types";
-import { generateId } from "./utils";
-
-const seedTransactions: Transaction[] = [
-  {
-    id: "t1",
-    type: "income",
-    amount: 8500,
-    category: "ขายสินค้า",
-    note: "ขายส่งหน้าร้าน",
-    date: "2026-06-24",
-  },
-  {
-    id: "t2",
-    type: "expense",
-    amount: 1200,
-    category: "ค่าน้ำ-ไฟ-อินเทอร์เน็ต",
-    note: "ค่าไฟเดือนมิถุนายน",
-    date: "2026-06-23",
-  },
-  {
-    id: "t3",
-    type: "income",
-    amount: 3200,
-    category: "ค่าบริการ",
-    note: "ค่าออกแบบโลโก้",
-    date: "2026-06-20",
-  },
-  {
-    id: "t4",
-    type: "expense",
-    amount: 4500,
-    category: "ต้นทุนสินค้า",
-    note: "สั่งซื้อวัตถุดิบรอบใหม่",
-    date: "2026-06-18",
-  },
-];
-
-const seedDocuments: BusinessDocument[] = [
-  {
-    id: "d1",
-    type: "invoice",
-    docNumber: "INV-0001",
-    clientName: "บริษัท ทดสอบ จำกัด",
-    clientContact: "081-234-5678",
-    issueDate: "2026-06-15",
-    dueDate: "2026-06-30",
-    items: [
-      { id: "li1", description: "ค่าออกแบบเว็บไซต์", quantity: 1, unitPrice: 15000 },
-    ],
-    status: "sent",
-    note: "",
-  },
-];
 
 const defaultCompanyProfile: CompanyProfile = {
   name: "",
@@ -82,16 +43,20 @@ interface DataContextValue {
   transactions: Transaction[];
   documents: BusinessDocument[];
   companyProfile: CompanyProfile;
-  addTransaction: (t: Omit<Transaction, "id">) => void;
-  deleteTransaction: (id: string) => void;
+  loading: boolean;
+  addTransaction: (t: Omit<Transaction, "id">) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
   addDocument: (
     doc: Omit<BusinessDocument, "id" | "docNumber" | "type">,
     type: DocumentType
-  ) => BusinessDocument;
-  updateDocumentStatus: (id: string, status: DocumentStatus) => void;
-  updateDocumentPaymentInfo: (id: string, info: { paymentMethod?: string; paidDate?: string }) => void;
-  convertDocument: (id: string, toType: DocumentType) => BusinessDocument | null;
-  updateCompanyProfile: (profile: CompanyProfile) => void;
+  ) => Promise<BusinessDocument>;
+  updateDocumentStatus: (id: string, status: DocumentStatus) => Promise<void>;
+  updateDocumentPaymentInfo: (
+    id: string,
+    info: { paymentMethod?: string; paidDate?: string }
+  ) => Promise<void>;
+  convertDocument: (id: string, toType: DocumentType) => Promise<BusinessDocument | null>;
+  updateCompanyProfile: (profile: CompanyProfile) => Promise<void>;
   getDocument: (id: string) => BusinessDocument | undefined;
 }
 
@@ -103,74 +68,137 @@ function nextDocNumber(documents: BusinessDocument[], type: DocumentType): strin
   return `${prefix}-${String(countOfType + 1).padStart(4, "0")}`;
 }
 
-export function DataProvider({ children }: { children: ReactNode }) {
-  const [transactions, setTransactions] = useState<Transaction[]>(seedTransactions);
-  const [documents, setDocuments] = useState<BusinessDocument[]>(seedDocuments);
-  const [companyProfile, setCompanyProfile] = useState<CompanyProfile>(defaultCompanyProfile);
+// ทุกคนที่ล็อกอินเข้ามาใช้ "ข้อมูลธุรกิจร่วมกันชุดเดียว" เก็บไว้ใต้เอกสารคงที่ชื่อ "shared"
+// เหมาะกับธุรกิจเดียวที่มีพนักงาน/หุ้นส่วนหลายคนเข้าถึงข้อมูลเดียวกัน
+const WORKSPACE_ID = "shared";
 
-  const addTransaction = useCallback((t: Omit<Transaction, "id">) => {
-    setTransactions((prev) => [{ ...t, id: generateId() }, ...prev]);
+export function DataProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [documents, setDocuments] = useState<BusinessDocument[]>([]);
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile>(defaultCompanyProfile);
+  const [loading, setLoading] = useState(true);
+
+  // ฟัง realtime update จาก Firestore ทันทีที่ล็อกอินสำเร็จ
+  useEffect(() => {
+    if (!user) {
+      setTransactions([]);
+      setDocuments([]);
+      setCompanyProfile(defaultCompanyProfile);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    const txQuery = query(
+      collection(db, "workspaces", WORKSPACE_ID, "transactions"),
+      orderBy("date", "desc")
+    );
+    const unsubTx = onSnapshot(txQuery, (snapshot) => {
+      setTransactions(
+        snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Transaction))
+      );
+    });
+
+    const docsQuery = query(
+      collection(db, "workspaces", WORKSPACE_ID, "documents"),
+      orderBy("issueDate", "desc")
+    );
+    const unsubDocs = onSnapshot(docsQuery, (snapshot) => {
+      setDocuments(
+        snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as BusinessDocument))
+      );
+      setLoading(false);
+    });
+
+    const profileRef = doc(db, "workspaces", WORKSPACE_ID, "settings", "company");
+    const unsubProfile = onSnapshot(profileRef, (snap) => {
+      if (snap.exists()) {
+        setCompanyProfile(snap.data() as CompanyProfile);
+      }
+    });
+
+    return () => {
+      unsubTx();
+      unsubDocs();
+      unsubProfile();
+    };
+  }, [user]);
+
+  const addTransaction = useCallback(async (t: Omit<Transaction, "id">) => {
+    await addDoc(collection(db, "workspaces", WORKSPACE_ID, "transactions"), t);
   }, []);
 
-  const deleteTransaction = useCallback((id: string) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
+  const deleteTransaction = useCallback(async (id: string) => {
+    await deleteDoc(doc(db, "workspaces", WORKSPACE_ID, "transactions", id));
   }, []);
 
   const addDocument = useCallback(
-    (doc: Omit<BusinessDocument, "id" | "docNumber" | "type">, type: DocumentType) => {
+    async (docInput: Omit<BusinessDocument, "id" | "docNumber" | "type">, type: DocumentType) => {
       const docNumber = nextDocNumber(documents, type);
-      const created: BusinessDocument = { ...doc, id: generateId(), docNumber, type };
-      setDocuments((prev) => [created, ...prev]);
-      return created;
+      const ref = await addDoc(collection(db, "workspaces", WORKSPACE_ID, "documents"), {
+        ...docInput,
+        docNumber,
+        type,
+      });
+      return { ...docInput, id: ref.id, docNumber, type } as BusinessDocument;
     },
     [documents]
   );
 
-  const updateDocumentStatus = useCallback((id: string, status: DocumentStatus) => {
-    setDocuments((prev) =>
-      prev.map((doc) => (doc.id === id ? { ...doc, status } : doc))
-    );
+  const updateDocumentStatus = useCallback(async (id: string, status: DocumentStatus) => {
+    await updateDoc(doc(db, "workspaces", WORKSPACE_ID, "documents", id), { status });
   }, []);
 
   const updateDocumentPaymentInfo = useCallback(
-    (id: string, info: { paymentMethod?: string; paidDate?: string }) => {
-      setDocuments((prev) =>
-        prev.map((doc) => (doc.id === id ? { ...doc, ...info } : doc))
-      );
+    async (id: string, info: { paymentMethod?: string; paidDate?: string }) => {
+      await updateDoc(doc(db, "workspaces", WORKSPACE_ID, "documents", id), info);
     },
     []
   );
 
   const convertDocument = useCallback(
-    (id: string, toType: DocumentType): BusinessDocument | null => {
+    async (id: string, toType: DocumentType): Promise<BusinessDocument | null> => {
       const source = documents.find((d) => d.id === id);
       if (!source) return null;
 
       const docNumber = nextDocNumber(documents, toType);
-      const newDoc: BusinessDocument = {
-        ...source,
-        id: generateId(),
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      const { id: _omitId, ...sourceData } = source;
+      const newDocData = {
+        ...sourceData,
         type: toType,
         docNumber,
-        status: toType === "receipt" ? "paid" : "draft",
-        issueDate: new Date().toISOString().slice(0, 10),
+        status: (toType === "receipt" ? "paid" : "draft") as DocumentStatus,
+        issueDate: todayStr,
         convertedFromId: source.id,
-        convertedToId: undefined,
-        paidDate: toType === "receipt" ? new Date().toISOString().slice(0, 10) : undefined,
+        convertedToId: null,
+        paidDate: toType === "receipt" ? todayStr : null,
       };
 
-      setDocuments((prev) => [
-        newDoc,
-        ...prev.map((d) => (d.id === source.id ? { ...d, convertedToId: newDoc.id } : d)),
-      ]);
+      const ref = await addDoc(
+        collection(db, "workspaces", WORKSPACE_ID, "documents"),
+        newDocData
+      );
 
-      return newDoc;
+      await updateDoc(doc(db, "workspaces", WORKSPACE_ID, "documents", source.id), {
+        convertedToId: ref.id,
+      });
+
+      return {
+        ...newDocData,
+        id: ref.id,
+        convertedToId: undefined,
+        paidDate: newDocData.paidDate ?? undefined,
+      } as BusinessDocument;
     },
     [documents]
   );
 
-  const updateCompanyProfile = useCallback((profile: CompanyProfile) => {
-    setCompanyProfile(profile);
+  const updateCompanyProfile = useCallback(async (profile: CompanyProfile) => {
+    await setDoc(doc(db, "workspaces", WORKSPACE_ID, "settings", "company"), profile);
   }, []);
 
   const getDocument = useCallback(
@@ -184,6 +212,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         transactions,
         documents,
         companyProfile,
+        loading,
         addTransaction,
         deleteTransaction,
         addDocument,

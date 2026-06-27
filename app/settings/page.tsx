@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, FormEvent } from "react";
+import { useState, useRef, useEffect, FormEvent } from "react";
 import { Upload, X, Check } from "lucide-react";
 import { useData } from "@/lib/data-store";
 
@@ -8,11 +8,23 @@ export default function SettingsPage() {
   const { companyProfile, updateCompanyProfile } = useData();
   const [form, setForm] = useState(companyProfile);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // อัปเดตฟอร์มทันทีที่ข้อมูลร้านโหลดมาจาก Firestore สำเร็จ
+  useEffect(() => {
+    setForm(companyProfile);
+  }, [companyProfile]);
 
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 700 * 1024) {
+      setError("ไฟล์โลโก้ใหญ่เกินไป กรุณาเลือกไฟล์ที่เล็กกว่า 700KB");
+      return;
+    }
+    setError("");
     const reader = new FileReader();
     reader.onload = () => {
       setForm((prev) => ({ ...prev, logoDataUrl: reader.result as string }));
@@ -25,11 +37,19 @@ export default function SettingsPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    updateCompanyProfile(form);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setError("");
+    setSaving(true);
+    try {
+      await updateCompanyProfile(form);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      setError("บันทึกไม่สำเร็จ กรุณาลองใหม่");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (

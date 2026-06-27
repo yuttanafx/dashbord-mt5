@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { DataProvider } from "@/lib/data-store";
-import Sidebar from "@/components/Sidebar";
-import MobileNav from "@/components/MobileNav";
+import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "บัญชีของฉัน",
@@ -17,13 +15,7 @@ export default function RootLayout({
   return (
     <html lang="th" className="h-full antialiased">
       <body className="min-h-full bg-[var(--color-app-bg)]">
-        <DataProvider>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="flex-1 pb-20 md:pb-0">{children}</main>
-          </div>
-          <MobileNav />
-        </DataProvider>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

@@ -17,6 +17,7 @@ export default function NewTransactionPage() {
   const [note, setNote] = useState("");
   const [date, setDate] = useState(todayISO());
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const categories = type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
@@ -25,15 +26,22 @@ export default function NewTransactionPage() {
     setCategory(next === "income" ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0]);
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const numericAmount = parseFloat(amount);
     if (!amount || isNaN(numericAmount) || numericAmount <= 0) {
       setError("กรุณากรอกจำนวนเงินให้ถูกต้อง");
       return;
     }
-    addTransaction({ type, amount: numericAmount, category, note, date });
-    router.push("/");
+    setError("");
+    setSubmitting(true);
+    try {
+      await addTransaction({ type, amount: numericAmount, category, note, date });
+      router.push("/");
+    } catch {
+      setError("บันทึกไม่สำเร็จ กรุณาลองใหม่");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -155,9 +163,10 @@ export default function NewTransactionPage() {
 
         <button
           type="submit"
-          className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-medium py-3.5 rounded-xl shadow-sm transition-colors"
+          disabled={submitting}
+          className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-60 text-white font-medium py-3.5 rounded-xl shadow-sm transition-colors"
         >
-          บันทึกรายการ
+          {submitting ? "กำลังบันทึก..." : "บันทึกรายการ"}
         </button>
       </form>
     </div>

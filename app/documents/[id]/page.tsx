@@ -49,9 +49,9 @@ export default function DocumentDetailPage() {
   const nextType: DocumentType | null =
     doc.type === "quotation" ? "invoice" : doc.type === "invoice" ? "receipt" : null;
 
-  function handleConvert() {
+  async function handleConvert() {
     if (!nextType) return;
-    const newDoc = convertDocument(docId, nextType);
+    const newDoc = await convertDocument(docId, nextType);
     if (newDoc) {
       router.push(`/documents/${newDoc.id}`);
     }
