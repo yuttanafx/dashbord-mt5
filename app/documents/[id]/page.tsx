@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Printer, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, Printer, ArrowRight, Check, Trash2 } from "lucide-react";
 import { useData } from "@/lib/data-store";
 import { formatCurrency, formatDate, documentTotal } from "@/lib/utils";
 import { DocumentStatus, DocumentType, DOCUMENT_TYPE_LABEL, PAYMENT_METHODS } from "@/lib/types";
@@ -23,7 +23,7 @@ const statusOptionsByType: Record<DocumentType, DocumentStatus[]> = {
 export default function DocumentDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { documents, updateDocumentStatus, convertDocument, getDocument, updateDocumentPaymentInfo } = useData();
+  const { documents, updateDocumentStatus, convertDocument, getDocument, updateDocumentPaymentInfo, deleteDocument } = useData();
 
   const doc = documents.find((d) => d.id === params.id);
 
@@ -45,6 +45,7 @@ export default function DocumentDetailPage() {
   const source = doc.convertedFromId ? getDocument(doc.convertedFromId) : undefined;
   const convertedTo = doc.convertedToId ? getDocument(doc.convertedToId) : undefined;
   const docId = doc.id;
+  const docNumber = doc.docNumber;
 
   const nextType: DocumentType | null =
     doc.type === "quotation" ? "invoice" : doc.type === "invoice" ? "receipt" : null;
@@ -57,6 +58,12 @@ export default function DocumentDetailPage() {
     }
   }
 
+  async function handleDelete() {
+    if (!confirm(`ลบเอกสาร "${docNumber}" ใช่หรือไม่? การลบไม่สามารถย้อนกลับได้`)) return;
+    await deleteDocument(docId);
+    router.push("/documents");
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 md:px-8 py-6 md:py-10">
       <div className="flex items-center justify-between mb-6">
@@ -67,15 +74,24 @@ export default function DocumentDetailPage() {
           <ArrowLeft size={16} />
           กลับไปหน้าเอกสาร
         </button>
-        <a
-          href={`/documents/${doc.id}/print`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-primary)] hover:underline"
-        >
-          <Printer size={16} />
-          พิมพ์ / บันทึก PDF
-        </a>
+        <div className="flex items-center gap-4">
+          <a
+            href={`/documents/${doc.id}/print`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-primary)] hover:underline"
+          >
+            <Printer size={16} />
+            พิมพ์ / บันทึก PDF
+          </a>
+          <button
+            onClick={handleDelete}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-expense)] hover:underline"
+          >
+            <Trash2 size={14} />
+            ลบ
+          </button>
+        </div>
       </div>
 
       {/* แถบบอกลำดับเอกสารที่เชื่อมกัน */}

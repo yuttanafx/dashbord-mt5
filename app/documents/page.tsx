@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, ArrowRight } from "lucide-react";
+import { Plus, ArrowRight, Trash2 } from "lucide-react";
 import { useData } from "@/lib/data-store";
 import { formatCurrency, formatDate, documentTotal } from "@/lib/utils";
 import { DocumentType, DocumentStatus, DOCUMENT_TYPE_LABEL } from "@/lib/types";
@@ -32,10 +32,17 @@ const typeStyle: Record<DocumentType, string> = {
 };
 
 export default function DocumentsPage() {
-  const { documents } = useData();
+  const { documents, deleteDocument } = useData();
   const [filter, setFilter] = useState<Filter>("all");
 
   const filtered = documents.filter((d) => (filter === "all" ? true : d.type === filter));
+
+  async function handleDelete(e: React.MouseEvent, id: string, docNumber: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm(`ลบเอกสาร "${docNumber}" ใช่หรือไม่? การลบไม่สามารถย้อนกลับได้`)) return;
+    await deleteDocument(id);
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10">
@@ -95,9 +102,18 @@ export default function DocumentsPage() {
                     {doc.docNumber}
                   </span>
                 </div>
-                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusStyle[doc.status]}`}>
-                  {statusLabel[doc.status]}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusStyle[doc.status]}`}>
+                    {statusLabel[doc.status]}
+                  </span>
+                  <button
+                    onClick={(e) => handleDelete(e, doc.id, doc.docNumber)}
+                    aria-label="ลบเอกสาร"
+                    className="text-[var(--color-text-muted)] hover:text-[var(--color-expense)] transition-colors"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
               <p className="text-sm text-[var(--color-text-secondary)] mb-1">{doc.clientName}</p>
               <p className="text-xs text-[var(--color-text-muted)] mb-3">

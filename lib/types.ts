@@ -104,6 +104,88 @@ export interface Product {
 
 export const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 
+export interface Supplier {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  note?: string;
+}
+
+export interface PurchaseOrderItem {
+  id: string;
+  productId: string;
+  productName: string; // เก็บชื่อ ณ ขณะนั้นไว้ เผื่อสินค้าถูกแก้ไข/ลบทีหลัง
+  unit: string;
+  quantity: number;
+  unitCost: number; // ราคาต้นทุนต่อหน่วยที่ซื้อ
+}
+
+export type PurchaseOrderStatus = "draft" | "pending_approval" | "approved" | "received" | "cancelled";
+
+export const PO_STATUS_LABEL: Record<PurchaseOrderStatus, string> = {
+  draft: "ฉบับร่าง",
+  pending_approval: "รออนุมัติ",
+  approved: "อนุมัติแล้ว",
+  received: "รับสินค้าแล้ว",
+  cancelled: "ยกเลิก",
+};
+
+export interface PurchaseOrder {
+  id: string;
+  poNumber: string;
+  supplierId: string;
+  supplierName: string;
+  orderDate: string;
+  expectedDate: string;
+  items: PurchaseOrderItem[];
+  status: PurchaseOrderStatus;
+  note: string;
+  approvedAt?: string;
+  receivedDocId?: string; // ลิงก์ไปยังใบรับสินค้าที่สร้างจาก PO นี้ (ถ้ามี)
+}
+
+export interface GoodsReceiptItem {
+  id: string;
+  productId: string;
+  productName: string;
+  unit: string;
+  quantityOrdered: number;
+  quantityReceived: number;
+  unitCost: number;
+}
+
+export interface GoodsReceipt {
+  id: string;
+  grNumber: string;
+  purchaseOrderId: string;
+  poNumber: string;
+  supplierId: string;
+  supplierName: string;
+  receivedDate: string;
+  items: GoodsReceiptItem[];
+  note: string;
+}
+
+export interface CashSaleItem {
+  id: string;
+  productId: string;
+  productName: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface CashSale {
+  id: string;
+  saleNumber: string;
+  saleDate: string;
+  items: CashSaleItem[];
+  total: number;
+  note: string;
+  transactionId?: string; // ลิงก์ไปยังรายการรายรับที่สร้างอัตโนมัติ
+}
+
 export const INCOME_CATEGORIES = [
   "ขายสินค้า",
   "ค่าบริการ",
