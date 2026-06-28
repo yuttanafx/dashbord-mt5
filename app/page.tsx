@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Wallet, TrendingUp, TrendingDown, Plus, FileText, Loader2 } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Plus, FileText, Loader2, AlertTriangle } from "lucide-react";
 import { useData } from "@/lib/data-store";
 import { formatCurrency } from "@/lib/utils";
 import SummaryCard from "@/components/SummaryCard";
@@ -9,7 +9,7 @@ import TransactionRow from "@/components/TransactionRow";
 import MonthlyChart from "@/components/MonthlyChart";
 
 export default function DashboardPage() {
-  const { transactions, loading } = useData();
+  const { transactions, products, loading } = useData();
 
   const totalIncome = transactions
     .filter((t) => t.type === "income")
@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const balance = totalIncome - totalExpense;
 
   const recent = transactions.slice(0, 5);
+  const lowStockProducts = products.filter((p) => p.stockQty <= p.lowStockThreshold);
 
   if (loading) {
     return (
@@ -61,6 +62,19 @@ export default function DashboardPage() {
           tone="expense"
         />
       </section>
+
+      {/* แจ้งเตือนสินค้าใกล้หมด */}
+      {lowStockProducts.length > 0 && (
+        <Link
+          href="/products"
+          className="mb-8 flex items-center gap-2.5 rounded-xl bg-[var(--color-expense-soft)] text-[var(--color-expense)] px-4 py-3 text-sm"
+        >
+          <AlertTriangle size={16} className="shrink-0" />
+          <span>
+            มีสินค้าใกล้หมด <strong>{lowStockProducts.length} รายการ</strong> — กดเพื่อดูรายการ
+          </span>
+        </Link>
+      )}
 
       {/* กราฟรายเดือน */}
       <section className="mb-8">

@@ -91,6 +91,19 @@ export const STATUS_LABEL: Record<DocumentStatus, string> = {
 
 export const PAYMENT_METHODS = ["เงินสด", "โอนเงิน", "บัตรเครดิต/เดบิต", "เช็ค", "อื่นๆ"] as const;
 
+export interface Product {
+  id: string;
+  name: string;
+  sku: string;
+  unit: string; // หน่วยนับ เช่น ชิ้น, ขวด, กล่อง
+  sellPrice: number;
+  stockQty: number;
+  lowStockThreshold: number; // แจ้งเตือนเมื่อสต็อกต่ำกว่าค่านี้
+  note?: string;
+}
+
+export const DEFAULT_LOW_STOCK_THRESHOLD = 5;
+
 export const INCOME_CATEGORIES = [
   "ขายสินค้า",
   "ค่าบริการ",

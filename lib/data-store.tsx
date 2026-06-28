@@ -27,6 +27,7 @@ import {
   DocumentType,
   DocumentStatus,
   CompanyProfile,
+  Product,
   DOCUMENT_PREFIX,
 } from "./types";
 
@@ -43,6 +44,7 @@ const defaultCompanyProfile: CompanyProfile = {
 interface DataContextValue {
   transactions: Transaction[];
   documents: BusinessDocument[];
+  products: Product[];
   companyProfile: CompanyProfile;
   loading: boolean;
   addTransaction: (t: Omit<Transaction, "id">) => Promise<void>;
@@ -59,6 +61,10 @@ interface DataContextValue {
   convertDocument: (id: string, toType: DocumentType) => Promise<BusinessDocument | null>;
   updateCompanyProfile: (profile: CompanyProfile) => Promise<void>;
   getDocument: (id: string) => BusinessDocument | undefined;
+  addProduct: (p: Omit<Product, "id">) => Promise<void>;
+  updateProduct: (id: string, p: Omit<Product, "id">) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+  adjustStock: (id: string, delta: number) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
@@ -77,6 +83,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile>(defaultCompanyProfile);
   const [loading, setLoading] = useState(true);
 
@@ -85,6 +92,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!user) {
       setTransactions([]);
       setDocuments([]);
+      setProducts([]);
       setCompanyProfile(defaultCompanyProfile);
       setLoading(false);
       return;
@@ -120,10 +128,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    const productsQuery = query(
+      collection(db, "workspaces", WORKSPACE_ID, "products"),
+      orderBy("name", "asc")
+    );
+    const unsubProducts = onSnapshot(productsQuery, (snapshot) => {
+      setProducts(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Product)));
+    });
+
     return () => {
       unsubTx();
       unsubDocs();
       unsubProfile();
+      unsubProducts();
     };
   }, [user]);
 
@@ -207,11 +224,37 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [documents]
   );
 
+  const addProduct = useCallback(async (p: Omit<Product, "id">) => {
+    await addDoc(collection(db, "workspaces", WORKSPACE_ID, "products"), p);
+  }, []);
+
+  const updateProduct = useCallback(async (id: string, p: Omit<Product, "id">) => {
+    await updateDoc(doc(db, "workspaces", WORKSPACE_ID, "products", id), { ...p });
+  }, []);
+
+  const deleteProduct = useCallback(async (id: string) => {
+    await deleteDoc(doc(db, "workspaces", WORKSPACE_ID, "products", id));
+  }, []);
+
+  // ปรับจำนวนสต็อก (delta บวก = เพิ่มสต็อก เช่น รับสินค้า, delta ลบ = ลดสต็อก เช่น ขายออก)
+  const adjustStock = useCallback(
+    async (id: string, delta: number) => {
+      const product = products.find((p) => p.id === id);
+      if (!product) return;
+      const newQty = Math.max(0, product.stockQty + delta);
+      await updateDoc(doc(db, "workspaces", WORKSPACE_ID, "products", id), {
+        stockQty: newQty,
+      });
+    },
+    [products]
+  );
+
   return (
     <DataContext.Provider
       value={{
         transactions,
         documents,
+        products,
         companyProfile,
         loading,
         addTransaction,
@@ -222,6 +265,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         convertDocument,
         updateCompanyProfile,
         getDocument,
+        addProduct,
+        updateProduct,
+        deleteProduct,
+        adjustStock,
       }}
     >
       {children}
