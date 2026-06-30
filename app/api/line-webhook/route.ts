@@ -4,7 +4,7 @@ import { analyzeReceiptImage } from "@/lib/gemini-receipt";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { RECEIPT_VALIDITY_LABEL } from "@/lib/types";
 
-const WORKSPACE_ID = "default";
+const WORKSPACE_ID = "shared";
 
 interface LineEvent {
   type: string;
