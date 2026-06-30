@@ -36,7 +36,6 @@ import {
   GoodsReceiptItem,
   CashSale,
   CashSaleItem,
-  PendingReceipt,
   DOCUMENT_PREFIX,
 } from "./types";
 
@@ -58,7 +57,6 @@ interface DataContextValue {
   purchaseOrders: PurchaseOrder[];
   goodsReceipts: GoodsReceipt[];
   cashSales: CashSale[];
-  pendingReceipts: PendingReceipt[];
   companyProfile: CompanyProfile;
   loading: boolean;
   addTransaction: (t: Omit<Transaction, "id">) => Promise<void>;
@@ -94,11 +92,6 @@ interface DataContextValue {
   ) => Promise<GoodsReceipt | null>;
   addCashSale: (items: CashSaleItem[], note: string) => Promise<CashSale | null>;
   deleteCashSale: (id: string) => Promise<void>;
-  confirmPendingReceipt: (
-    id: string,
-    finalData: { type: "income" | "expense"; amount: number; category: string; date: string; note: string }
-  ) => Promise<void>;
-  rejectPendingReceipt: (id: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
@@ -126,7 +119,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [goodsReceipts, setGoodsReceipts] = useState<GoodsReceipt[]>([]);
   const [cashSales, setCashSales] = useState<CashSale[]>([]);
-  const [pendingReceipts, setPendingReceipts] = useState<PendingReceipt[]>([]);
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile>(defaultCompanyProfile);
   const [loading, setLoading] = useState(true);
 
@@ -140,7 +132,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setPurchaseOrders([]);
       setGoodsReceipts([]);
       setCashSales([]);
-      setPendingReceipts([]);
       setCompanyProfile(defaultCompanyProfile);
       setLoading(false);
       return;
@@ -220,16 +211,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setCashSales(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as CashSale)));
     });
 
-    const pendingQuery = query(
-      collection(db, "workspaces", WORKSPACE_ID, "pendingReceipts"),
-      orderBy("receivedAt", "desc")
-    );
-    const unsubPending = onSnapshot(pendingQuery, (snapshot) => {
-      setPendingReceipts(
-        snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PendingReceipt))
-      );
-    });
-
     return () => {
       unsubTx();
       unsubDocs();
@@ -239,7 +220,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       unsubPO();
       unsubGR();
       unsubSales();
-      unsubPending();
     };
   }, [user]);
 
@@ -508,40 +488,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await deleteDoc(doc(db, "workspaces", WORKSPACE_ID, "cashSales", id));
   }, []);
 
-  // === รายการรอตรวจสอบ (จาก LINE + Gemini) ===
-  // ผู้ใช้ตรวจทาน/แก้ไขข้อมูลที่ AI วิเคราะห์มา แล้วยืนยัน -> สร้างเป็น Transaction จริง พร้อมแนบรูปสลิป
-  const confirmPendingReceipt = useCallback(
-    async (
-      id: string,
-      finalData: {
-        type: "income" | "expense";
-        amount: number;
-        category: string;
-        date: string;
-        note: string;
-      }
-    ) => {
-      const pending = pendingReceipts.find((p) => p.id === id);
-      if (!pending) return;
-
-      await addDoc(collection(db, "workspaces", WORKSPACE_ID, "transactions"), {
-        ...finalData,
-        receiptImageUrl: pending.imageDataUrl,
-      });
-
-      await updateDoc(doc(db, "workspaces", WORKSPACE_ID, "pendingReceipts", id), {
-        status: "confirmed",
-      });
-    },
-    [pendingReceipts]
-  );
-
-  const rejectPendingReceipt = useCallback(async (id: string) => {
-    await updateDoc(doc(db, "workspaces", WORKSPACE_ID, "pendingReceipts", id), {
-      status: "rejected",
-    });
-  }, []);
-
   return (
     <DataContext.Provider
       value={{
@@ -552,7 +498,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         purchaseOrders,
         goodsReceipts,
         cashSales,
-        pendingReceipts,
         companyProfile,
         loading,
         addTransaction,
@@ -577,8 +522,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         receivePurchaseOrder,
         addCashSale,
         deleteCashSale,
-        confirmPendingReceipt,
-        rejectPendingReceipt,
       }}
     >
       {children}

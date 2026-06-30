@@ -15,7 +15,6 @@ import {
   ShoppingCart,
   Truck,
   ClipboardList,
-  Inbox,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-store";
@@ -23,7 +22,6 @@ import { useData } from "@/lib/data-store";
 const mainNavItems = [
   { href: "/", label: "หน้าหลัก", icon: LayoutDashboard },
   { href: "/summary", label: "สรุปรายการ", icon: BarChart3 },
-  { href: "/pending-receipts", label: "รอตรวจสอบ", icon: Inbox },
   { href: "/transactions/new", label: "บันทึกรายการใหม่", icon: ListPlus },
   { href: "/transactions", label: "รายการทั้งหมด", icon: ListOrdered },
   { href: "/documents", label: "เอกสาร", icon: FileText },
@@ -42,10 +40,9 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { products, pendingReceipts } = useData();
+  const { products } = useData();
 
   const lowStockCount = products.filter((p) => p.stockQty <= p.lowStockThreshold).length;
-  const pendingCount = pendingReceipts.filter((p) => p.status === "pending").length;
 
   async function handleSignOut() {
     await signOut();
@@ -78,11 +75,6 @@ export default function Sidebar() {
             >
               <Icon size={18} />
               <span className="flex-1">{label}</span>
-              {href === "/pending-receipts" && pendingCount > 0 && (
-                <span className="bg-[var(--color-expense)] text-white text-[10px] font-semibold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
-                  {pendingCount}
-                </span>
-              )}
             </Link>
           );
         })}
