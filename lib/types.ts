@@ -91,6 +91,34 @@ export const STATUS_LABEL: Record<DocumentStatus, string> = {
 
 export const PAYMENT_METHODS = ["เงินสด", "โอนเงิน", "บัตรเครดิต/เดบิต", "เช็ค", "อื่นๆ"] as const;
 
+// สถานะการประเมินความน่าเชื่อถือของสลิป/ใบเสร็จที่ AI วิเคราะห์
+export type ReceiptValidity = "valid" | "needs_backup" | "unclear";
+
+export const RECEIPT_VALIDITY_LABEL: Record<ReceiptValidity, string> = {
+  valid: "ใช้ยืนบัญชีได้",
+  needs_backup: "ควรออกใบเสร็จสำรอง",
+  unclear: "ไม่ชัดเจน ต้องตรวจสอบเอง",
+};
+
+// รายการที่ AI (Gemini) วิเคราะห์จากรูปสลิป/ใบเสร็จที่ส่งเข้ากลุ่ม LINE
+// รอให้ผู้ใช้ตรวจสอบ/แก้ไข/ยืนยันในเว็บแอป ก่อนจะถูกบันทึกเป็น Transaction จริง
+export interface PendingReceipt {
+  id: string;
+  imageDataUrl: string; // รูปสลิปที่ดาวน์โหลดมาจาก LINE เก็บเป็น base64
+  suggestedType: TransactionType;
+  suggestedAmount: number;
+  suggestedCategory: string;
+  suggestedDate: string;
+  suggestedNote: string;
+  validity: ReceiptValidity;
+  validityReason: string; // คำอธิบายจาก AI ว่าทำไมถึงประเมินแบบนี้
+  rawAiResponse: string; // เก็บคำตอบดิบจาก Gemini ไว้เผื่อตรวจสอบย้อนหลัง
+  lineUserId: string; // ผู้ส่งใน LINE (เผื่อต้องติดต่อกลับ)
+  lineUserName: string;
+  receivedAt: string; // ISO datetime ที่ได้รับเข้ามา
+  status: "pending" | "confirmed" | "rejected";
+}
+
 export interface Product {
   id: string;
   name: string;
